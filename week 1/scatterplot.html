@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.dot {
+  stroke: #000;
+}
+
+</style>
+
+<script src="d3.v3.js"></script>
+
+<!-- sets var data equal to array of strings representing paragraphs in speech.  -->
+<script src="speech.js"></script>
+
+<body>
+  <div>
+    <select></select>
+  </div>
+</body>
+
+
+<script>
+
+//Run this line in the console to see what it creates!
+var alphabetArray = 'abcdefghijklmnopqrstuvwxyz'.split('')
+
+//Transform array of strings to array of objects, each with text property 
+var objectArray = data.map(function(d){ return {text: d} })
+
+//iterates over each paragraphObject
+objectArray.forEach(function(paragraphObject){
+  //iterates over each letter in the alphabet
+  alphabetArray.forEach(function(letter){ 
+    //sets the paragraphObject's letter property 
+
+    //uncomment the next line and refresh the page with the console open see what these objects look like:
+    //debugger
+    paragraphObject[letter] = paragraphObject.text.split(letter).length - 1; 
+    //what is paragraphObject.text.split(letter).length equal to?
+  }) 
+})
+
+//Margin convention
+//http://bl.ocks.org/mbostock/3019563
+//We'll go over this next class
+var margin = {top: 20, right: 10, bottom: 20, left: 40};
+
+var width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+//set up scales
+var x = d3.scale.linear()
+    .domain(d3.extent(objectArray.map(function(d){ return d.text.length })))
+    .range([0, width])
+
+var y = d3.scale.linear()
+    .domain(d3.extent(objectArray.map(function(d){ return d.a })))
+    .range([height, 0])
+
+//select all the circles in the SVG (there aren't any yet)
+svg.selectAll('circle')
+//bind data, creating placeholder elements
+		.data(objectArray).enter()
+//create a new circle for each placeholder element
+	.append('circle')
+		.attr('r', 5)
+//position based on paragraph lendth  and number of As
+		.attr('cx', function(d){ return x(d.text.length); })
+		.attr('cy', function(d){ return y(d.a)})
+
+
+d3.select('select')
+    .on('change', function(){
+      //when the drop down changes. run this code
+
+      //get the currently selected letter
+			var letter = d3.select(this.selectedOptions[0]).datum();
+
+      //move the circles to reflect that letters character count
+			d3.selectAll('circle').transition().duration(1000)
+					.attr('cy', function(d){ return y(d[letter]); });
+
+      //update the y-scale
+			y.domain(d3.extent(objectArray.map(function(d){ return d[letter]; })));
+
+      //reposition the y axis and the circles to reflect the new scale 
+			d3.selectAll('.y.axis').transition().duration(1000).delay(1000)
+					.call(yAxis)
+
+			d3.selectAll('circle').transition().duration(1000).delay(1000)
+					.attr('cy', function(d){ return y(d[letter]); });
+		})
+  //for every element alphabet array, create an opition in the dropdown
+  //inspect the page to see the html elements that are created here
+  //highlight one in the elements tab and run 'd3.select($0).datum() to see the data bound to it
+	.selectAll('option')
+		.data(alphabetArray).enter()
+	.append('option')
+		.text(function(d){ return d; })
+
+//We'll go over this next week - for now, try playing with the different values to change the apperence and layout
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+    
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis)
+  .append("text")
+    .attr("class", "label")
+    .attr("x", width)
+    .attr("y", -6)
+    .style("text-anchor", "end")
+    .text("Letter Count");
+
+svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+  .append("text")
+    .attr("class", "label")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end")
+    .text("Total Characters")
+
+
+</script>
