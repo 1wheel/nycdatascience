@@ -56,8 +56,6 @@ function ready(error, us, unemployment) {
     idToRate[d.id] = +d.rate; 
   });
 
-  debugger;
-
   svg.append("g")
       .attr("class", "counties")
     .selectAll("path")

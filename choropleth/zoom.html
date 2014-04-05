@@ -113,7 +113,7 @@ function ready(error, us, unemployment) {
   }
 
   function mousemove(d){
-    d3.select('#countyId').text(d3.format(',')(d.id));
+    d3.select('#countyId').text(d.id);
     d3.select('#unemploymentRate').text(d3.format('.2%')(rateById.get(d.id)));
 
     d3.select('#tooltip')
