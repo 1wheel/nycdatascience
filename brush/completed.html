@@ -27,6 +27,7 @@ svg {
 </style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="reusableTemplate.js"></script>
 <script>
 
 var margin = {top: 10, right: 10, bottom: 100, left: 40},
@@ -116,6 +117,13 @@ d3.csv("sp500.csv", type, function(error, data) {
     .selectAll("rect")
       .attr("y", -6)
       .attr("height", height2 + 7);
+
+
+  scatterPlot = graphs.scatter()
+      .data(data)
+      .brush(brush)
+      .parentEl(d3.select('body').append('div').node())
+      .draw()
 });
 
 function brushed() {
