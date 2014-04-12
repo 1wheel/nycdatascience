@@ -40,14 +40,31 @@ queue()
     .defer(d3.tsv, "unemployment.tsv")
     .await(ready);
 
+
 function ready(error, us, unemployment) {
+  var color = d3.scale.quantize()
+    .domain([0,.15])
+    .range(colorbrewer.Blues[4]);
+
+  var idToRate = {};
+  unemployment.forEach(function(d){ idToRate[d.id]= +d.rate; });
+
   svg.append("g")
       .attr("class", "counties")
     .selectAll("path")
       .data(topojson.feature(us, us.objects.counties).features)
     .enter().append("path")
-      .attr("d", path);
-debugger;
+      .attr("d", path)
+      .style("fill",function(d){ return color(idToRate[d.id]); })
+      .on('mouseover',function(d){
+        d3.select(this)
+          .style('fill','green')
+          .transition()
+          .style('fill','yellow')
+          .transition()
+          .style('fill','steelblue');
+      })
+
   svg.append("path")
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
       .attr("class", "states")

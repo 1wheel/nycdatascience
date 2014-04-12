@@ -65,7 +65,7 @@ function ready(error, us, unemployment) {
       .on('click', clicked);
 
   svg.append("path")
-      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a == b; }))
       .attr("class", "states")
       .attr("d", path);
 
@@ -95,7 +95,17 @@ function ready(error, us, unemployment) {
         .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
         .style("stroke-width", 1.5 / k + "px");
   }
+ 
+    function mousemove(d){
+      d3.select('#countyID').text(d.id);
+      d3.select('#unemploymentRate').text(d3.format('.2%')(rateById.get(d.id)));
 
+      d3.select('#tooltip')
+        .style({top: d3.event.pageY + 5 + 'px', left: d3.event.pageX + 5 + 'px'})
+
+      svg.selectAll("path")
+        .classed("active",function(e){return d == e;})
+    }
 
 
 }

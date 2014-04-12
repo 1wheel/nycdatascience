@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 960px;
+}
+
+form {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.node {
+  border: solid 1px white;
+  font: 10px sans-serif;
+  line-height: 12px;
+  overflow: hidden;
+  position: absolute;
+  text-indent: 2px;
+}
+
+</style>
+<form>
+  <label><input type="radio" name="mode" value="size" checked> Size</label>
+  <label><input type="radio" name="mode" value="count"> Count</label>
+</form>
+<script src="d3.v3.js"></script>
+<script src="queue.js"></script>
+<script>
+
+var margin = {top: 40, right: 10, bottom: 10, left: 10},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var color = d3.scale.category20c();
+
+var treemap = d3.layout.treemap()
+    .size([width, height])
+    .sticky(true)
+    .value(function(d) { return d.temp; })
+    .children(function(d){ return d.values; })
+
+var div = d3.select("body").append("div")
+    .style("position", "relative")
+    .style("width", (width + margin.left + margin.right) + "px")
+    .style("height", (height + margin.top + margin.bottom) + "px")
+    .style("left", margin.left + "px")
+    .style("top", margin.top + "px");
+
+
+var cities = ['ILCHICAG', 'NYNEWYOR', 'TXDALLAS', 'SPMADRID'];
+
+var q = queue();
+cities.forEach(function(name){ q.defer(d3.xhr, 'allsites/' + name + '.txt'); });
+q.await(function(error){
+  var flatData = [];
+  var args = [].slice.call(arguments, 1);
+  cities.forEach(function(name, i){
+    args[i].responseText.split('\n').filter(function(d){ return d.length; }).map(function(str){
+      flatData.push({
+        city:   name,
+        month:  +str.substring(0, 3),
+        day:    +str.substring(15, 17),
+        year:   +str.substring(29, 33),
+        temp:   +str.substring(41, 47) 
+      });
+    }); 
+  });
+  flatData.forEach(function(d){ d.date = new Date(d.year, d.month - 1, d.day); });
+
+  var nestedData = d3.nest()
+      //.key(function(d){ return d.year; })
+      .key(function(d){ return d.city; })
+      .key(function(d){ return d.month; })
+      //.rollup(function(leaves){ return d3.sum(leaves, function(d){ return d.temp; }); })
+      .entries(flatData);
+
+  nestedData.forEach(function(city){
+    city.values.forEach(function(month){
+      month.temp = d3.sum(month.values, function(d){ return d.temp; });
+      month.values = null;
+    })
+  })
+
+  root = {values: nestedData, key: 'Years'};
+  var node = div.datum(root).selectAll(".node")
+      .data(treemap.nodes)
+    .enter().append("div")
+      .attr("class", "node")
+      .call(position)
+      .style("background", function(d) { return d.values ? color(d.name) : null; })
+      .text(function(d) { return d.values ? null : d.key; });
+
+  d3.selectAll("input").on("change", function change() {
+    var value = this.value === "count"
+        ? function() { return 1; }
+        : function(d) { return d.temp; };
+
+    node
+        .data(treemap.value(value).nodes)
+      .transition()
+        .duration(1500)
+        .call(position);
+  });
+});
+
+function position() {
+  this.style("left", function(d) { return d.x + "px"; })
+      .style("top", function(d) { return d.y + "px"; })
+      .style("width", function(d) { return Math.max(0, d.dx - 1) + "px"; })
+      .style("height", function(d) { return Math.max(0, d.dy - 1) + "px"; });
+}
+
+</script>
