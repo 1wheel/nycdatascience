@@ -11,11 +11,21 @@
   stroke: orange;
 }
 
+.zoomactive {
+  stroke: red;
+}
+
 
 .states {
   fill: none;
   stroke: #fff;
   stroke-linejoin: round;
+}
+
+#tooltip{
+  position: absolute;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, .7);
 }
 
 
@@ -25,6 +35,11 @@
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="colorbrewer.js"></script>
+
+<div id='tooltip'>
+  Unemployment rate in <span id='countyId'></span> is <span id='unemploymentRate'></span>
+</div>
+
 <script>
 
 var width = 960,
@@ -51,8 +66,9 @@ queue()
     .defer(d3.tsv, "unemployment.tsv")
     .await(ready);
 
+var rateById = d3.map();
+
 function ready(error, us, unemployment) {
-  var rateById = d3.map();
   unemployment.forEach(function(d) { rateById.set(d.id, +d.rate); });
 
   svg.append("g")
@@ -62,7 +78,8 @@ function ready(error, us, unemployment) {
     .enter().append("path")
       .attr("fill", function(d) { return quantize(rateById.get(d.id)); })
       .attr("d", path)
-      .on('click', clicked);
+      .on('click', clicked)
+      .on('mousemove', mousemove);
 
   svg.append("path")
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a == b; }))
@@ -86,9 +103,8 @@ function ready(error, us, unemployment) {
       k = 1;
       centered = null;
     }
-
     svg.selectAll("path")
-        .classed("active", centered && function(d) { return d === centered; });
+        .classed("zoomactive", centered && function(d) { return d === centered; });
 
     svg.transition()
         .duration(750)
@@ -107,6 +123,9 @@ function ready(error, us, unemployment) {
         .classed("active",function(e){return d == e;})
     }
 
+    svg.selectAll("path")
+        .classed("active", function(e) { return d === e; });
+  }
 
 }
 
